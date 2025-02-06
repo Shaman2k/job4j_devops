@@ -50,6 +50,12 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+tasks.register("printVersion") {
+    doLast {
+        println(project.version)
+    }
+}
+
 tasks.register<Zip>("zipJavaDoc") {
     group = "documentation" // Группа, в которой будет отображаться задача
     description = "Packs the generated Javadoc into a zip archive"
