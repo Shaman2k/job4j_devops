@@ -44,6 +44,10 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation(libs.liquibase.core)
+    implementation(libs.postgresql)
+
 }
 
 tasks.withType<Test> {

@@ -20,18 +20,3 @@ if (remoteCacheUrl != null) {
     }
 }
 
-if (remoteCacheUrl != null) {
-    buildCache {
-        remote<HttpBuildCache> {
-            url = uri(remoteCacheUrl)
-            isAllowInsecureProtocol = true
-            isAllowUntrustedServer = true
-            isPush = System.getenv("GRADLE_REMOTE_CACHE_PUSH").toBoolean()
-            credentials {
-                username = System.getenv("GRADLE_REMOTE_CACHE_USERNAME")
-                password = System.getenv("GRADLE_REMOTE_CACHE_PASSWORD")
-            }
-        }
-    }
-}
-
