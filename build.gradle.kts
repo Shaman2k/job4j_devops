@@ -47,7 +47,6 @@ buildscript {
     }
 }
 
-
 dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
@@ -58,6 +57,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation(libs.postgresql)
+    testImplementation("org.testcontainers:postgresql:1.20.4")
 
     liquibaseRuntime("org.liquibase:liquibase-core:4.30.0")
     liquibaseRuntime("org.postgresql:postgresql:42.7.4")
@@ -70,12 +70,12 @@ dependencies {
 liquibase {
     activities.register("main") {
         this.arguments = mapOf(
-                "logLevel"       to "info",
-                "url"            to env.DB_URL.value,
-                "username"       to env.DB_USERNAME.value,
-                "password"       to env.DB_PASSWORD.value,
-                "classpath"      to "src/main/resources",
-                "changelogFile"  to "db/changelog/db.changelog-master.xml"
+                "logLevel" to "info",
+                "url" to env.DB_URL.value,
+                "username" to env.DB_USERNAME.value,
+                "password" to env.DB_PASSWORD.value,
+                "classpath" to "src/main/resources",
+                "changelogFile" to "db/changelog/db.changelog-master.xml"
         )
     }
     runList = "main"
@@ -163,4 +163,37 @@ tasks.named<Test>("test") {
     systemProperty("spring.datasource.url", env.DB_URL.value)
     systemProperty("spring.datasource.username", env.DB_USERNAME.value)
     systemProperty("spring.datasource.password", env.DB_PASSWORD.value)
+}
+
+val integrationTest by sourceSets.creating {
+    java {
+        srcDir("src/integrationTest/java")
+    }
+    resources {
+        srcDir("src/integrationTest/resources")
+    }
+
+    compileClasspath += sourceSets["main"].output + sourceSets["test"].output
+    runtimeClasspath += sourceSets["main"].output + sourceSets["test"].output
+}
+
+val integrationTestImplementation by configurations.getting {
+    extendsFrom(configurations["testImplementation"])
+}
+val integrationTestRuntimeOnly by configurations.getting {
+    extendsFrom(configurations["testRuntimeOnly"])
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs the integration tests."
+    group = "verification"
+
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+
+    shouldRunAfter(tasks.test)
+}
+
+tasks.check {
+    dependsOn("integrationTest")
 }
