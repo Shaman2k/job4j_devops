@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'agent2' }
+    agent { label 'agent1' }
 
     tools {
         git 'Default'
@@ -8,47 +8,50 @@ pipeline {
     stages {
         stage('Prepare Environment') {
             steps {
-                sh 'chmod +x ./gradlew'
+                script {
+                    sh 'chmod +x ./gradlew'
+                }
             }
         }
-        stage('Check') {
+        stage('Checkstyle Main') {
             steps {
-                sh './gradlew check -P"dotenv.filename"="/var/agent-jdk21/env/.env.develop"'
+                script {
+                    sh './gradlew checkstyleMain'
+                }
             }
         }
-        stage('Package') {
+        stage('Checkstyle Test') {
             steps {
-                sh './gradlew build -P"dotenv.filename"="/var/agent-jdk21/env/.env.develop"'
+                script {
+                    sh './gradlew checkstyleTest'
+                }
+            }
+        }
+        stage('Compile') {
+            steps {
+                script {
+                    sh './gradlew compileJava'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    sh './gradlew test'
+                }
             }
         }
         stage('JaCoCo Report') {
             steps {
-                sh './gradlew jacocoTestReport -P"dotenv.filename"="/var/agent-jdk21/env/.env.develop"'
+                script {
+                    sh './gradlew jacocoTestReport'
+                }
             }
         }
         stage('JaCoCo Verification') {
             steps {
-                sh './gradlew jacocoTestCoverageVerification -P"dotenv.filename"="/var/agent-jdk21/env/.env.develop"'
-            }
-        }
-        stage('Get project version') {
-            steps {
                 script {
-                   def VERSION = sh(script: './gradlew printVersion -q', returnStdout: true).trim()
-                   env.VERSION = VERSION
-                   echo "Project version: ${env.VERSION}"
-                }
-            }
-        }
-        stage('Docker Build') {
-            steps {
-                sh "docker build --build-arg VERSION=${env.VERSION} -t job4j_devops ."
-            }
-        }
-        stage('Update DB') {
-            steps {
-                script {
-                    sh './gradlew update -P"dotenv.filename"="/var/agent-jdk21/env/.env.develop"'
+                    sh './gradlew jacocoTestCoverageVerification'
                 }
             }
         }
@@ -56,15 +59,13 @@ pipeline {
 
     post {
         always {
-            script {
-                def buildInfo = """
-                    Build number: ${currentBuild.number}
-                    Build status: ${currentBuild.currentResult}
-                    Started at: ${new Date(currentBuild.startTimeInMillis)}
-                    Duration: ${currentBuild.durationString}
-                """
-                telegramSend(message: buildInfo)
-            }
+                script {
+                    def buildInfo = "Build number: ${currentBuild.number}\n" +
+                                    "Build status: ${currentBuild.currentResult}\n" +
+                                    "Started at: ${new Date(currentBuild.startTimeInMillis)}\n" +
+                                    "Duration so far: ${currentBuild.durationString}"
+                    telegramSend(message: buildInfo)
+                }
         }
     }
 }
